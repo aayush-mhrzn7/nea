@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  password      String
+  full_name     String
+  email         String    @unique
+  mobile_number String    @unique
+  user_type     String    // 'admin', 'staff', 'customer'
+  customerID    Int?      @unique
+  branchID      Int?
+  created_date  DateTime  @default(now())
+
+  branch        Branch?   @relation(fields: [branchID], references: [id])
+  customer      Customer? @relation(fields: [customerID], references: [id])
+  verified_bills Bill[]   @relation("BillVerifier")
+}
+
+model Customer {
+  id                 Int       @id @default(autoincrement())
+  sc_number          String    @unique
+  full_name          String
+  address            String
+  mobile_number      String    @unique
+  citizenship_number String    @unique
+  dob                DateTime
+  branchID           Int
+  demandID           Int       @unique
+
+  branch       Branch      @relation(fields: [branchID], references: [id])
+  user         User?       @relation()
+  demand_type  DemandType  @relation(fields: [demandID], references: [id])
+  payments     Payment[]
+  bills        Bill[]
+}
+
+model Branch {
+  id             Int        @id @default(autoincrement())
+  branch_name    String
+  address        String
+  contact_number String     @unique
+  email          String     @unique
+  created_date   DateTime   @default(now())
+
+  customers      Customer[]
+  users          User[]
+}
+
+model Bill {
+  id                     Int      @id @default(autoincrement())
+  customerID             Int
+  amount                 Int
+  bill_month             String
+  bill_year              String
+  current_reading        String
+  previous_reading       String
+  units_consumed         Int
+  minimum_service_charge Int
+  unit_charge            Int
+  total_amount           Int
+  rebate_amount          Int
+  penalty_amount         Int
+  status                 String
+  due_date               DateTime
+  generated_date         DateTime @default(now())
+  verified_by            Int
+
+  customer     Customer @relation(fields: [customerID], references: [id])
+  verifier     User     @relation("BillVerifier", fields: [verified_by], references: [id])
+}
+
+model Payment {
+  id             Int      @id @default(autoincrement())
+  amount         Float
+  paid_date      DateTime @default(now())
+  customerID     Int
+  payment_status String
+  created_date   DateTime @default(now())
+
+  customer       Customer @relation(fields: [customerID], references: [id])
+}
+
+model DemandType {
+  id                     Int      @id @default(autoincrement())
+  demand_code            String
+  demand_description     String
+  base_charge            Int
+  rate_per_unit          Int
+  minimum_service_charge Int
+  created_date           DateTime @default(now())
+
+  customers              Customer[]
+}
