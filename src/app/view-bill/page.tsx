@@ -1,7 +1,12 @@
 import React from "react";
+import NEABillForm from "./component/form";
 
 const page = () => {
-  return <div>page</div>;
+  return (
+    <>
+      <NEABillForm />
+    </>
+  );
 };
 
 export default page;
